@@ -23,8 +23,6 @@ RUN npm run build
 ENV NODE_ENV=production
 EXPOSE 8080
 
-# Create startup script that runs migrations then starts server
-RUN echo '#!/bin/sh\nset -e\nnpx prisma migrate deploy\nnode dist/server.js' > /app/start.sh && chmod +x /app/start.sh
-
-CMD ["/app/start.sh"]
+# Use sh -c to run migrations then start server
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
 
