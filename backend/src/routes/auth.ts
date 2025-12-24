@@ -42,8 +42,12 @@ export async function authRoutes(app: FastifyInstance) {
     let siwe: SiweMessage;
     try {
       siwe = new SiweMessage(body.message);
-    } catch {
-      return reply.code(400).send({ error: 'INVALID_SIWE_MESSAGE' });
+    } catch (error: any) {
+      app.log.error({ error: error.message, message: body.message }, 'SIWE message parse error');
+      return reply.code(400).send({ 
+        error: 'INVALID_SIWE_MESSAGE',
+        details: error.message 
+      });
     }
 
     if (siwe.address.toLowerCase() !== address) {
