@@ -52,11 +52,30 @@ export async function authRoutes(app: FastifyInstance) {
     if (Number(siwe.chainId) !== app.env.CHAIN_ID) {
       return reply.code(400).send({ error: 'CHAIN_MISMATCH' });
     }
-    if (siwe.domain !== app.env.SIWE_DOMAIN) {
-      return reply.code(400).send({ error: 'DOMAIN_MISMATCH' });
+    
+    // SIWE_DOMAIN과 SIWE_URI를 쉼표로 구분하여 여러 값 허용
+    const allowedDomains = (app.env.SIWE_DOMAIN || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const allowedUris = (app.env.SIWE_URI || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    
+    if (!allowedDomains.includes(siwe.domain)) {
+      return reply.code(400).send({ 
+        error: 'DOMAIN_MISMATCH', 
+        expected: app.env.SIWE_DOMAIN, 
+        received: siwe.domain 
+      });
     }
-    if (siwe.uri !== app.env.SIWE_URI) {
-      return reply.code(400).send({ error: 'URI_MISMATCH' });
+    if (!allowedUris.includes(siwe.uri)) {
+      return reply.code(400).send({ 
+        error: 'URI_MISMATCH', 
+        expected: app.env.SIWE_URI, 
+        received: siwe.uri 
+      });
     }
 
     const nonceRow = await app.db.authNonce.findFirst({
