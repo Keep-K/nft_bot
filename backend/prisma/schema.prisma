@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  address   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nonces           AuthNonce[]
+  sessions         Session[]
+  profile          PersonalInfo?
+  orders           Order[]
+  purchaseSessions PurchaseSession[]
+}
+
+model AuthNonce {
+  id        String    @id @default(cuid())
+  nonce     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([nonce])
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+}
+
+model PersonalInfo {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  encryptedJson String
+  dataHash      String
+  nftTxHash     String?
+  nftTokenId    String?
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PurchaseSession {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  vendor     String
+  productUrl String
+  status     String   @default("CREATED")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Order {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  vendor       String
+  productUrl   String
+  amount       String
+  tokenAddress String
+  receiver     String
+
+  status    String    @default("PENDING_PAYMENT")
+  paymentTx String?   @unique
+  paidAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
